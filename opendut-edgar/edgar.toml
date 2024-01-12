@@ -10,3 +10,19 @@ connect.interval.ms = 5000
 [network.tls]
 ca.certificate = "/etc/opendut-network/tls/ca.pem"
 domain.name.override = ""
+
+[[topology.devices]]
+id = "471d199d-c8ae-420f-9711-405de06543d2"
+name = "can0"
+description = "can0"
+location = "mu"
+interface = "can0"
+tags = ["CAN"]
+
+[[topology.devices]]
+id = "471d199d-c8ae-420f-9711-405de06543d3"
+name = "vcan0"
+description = "vcan0"
+location = "mu"
+interface = "vcan0"
+tags = ["CAN"]

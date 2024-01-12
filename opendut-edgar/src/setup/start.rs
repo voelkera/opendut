@@ -33,6 +33,7 @@ pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyho
 
     let network_device_manager = Rc::new(NetworkDeviceManager::create()?);
     let bridge_name = InterfaceName::try_from("br-opendut").unwrap();
+    let vcan_interface_name = InterfaceName::try_from("vcan-opendut").unwrap();
 
     let tasks: Vec<Box<dyn Task>> = vec![
         Box::new(tasks::CheckOsRequirements),
@@ -56,6 +57,7 @@ pub async fn managed(run_mode: RunMode, setup_string: String, mtu: u16) -> anyho
         Box::new(tasks::linux_network_capability::RequestCapabilityForUser),
         Box::new(tasks::linux_network_capability::RequestCapabilityForExecutable),
         Box::new(tasks::network_device::CreateBridge { network_device_manager: network_device_manager.clone(), bridge_name }),
+        Box::new(tasks::network_device::SetupLocalCanRouting { network_device_manager: network_device_manager.clone(), vcan_interface_name }),
         Box::new(tasks::CreateServiceFile),
         Box::new(tasks::StartService),
     ];

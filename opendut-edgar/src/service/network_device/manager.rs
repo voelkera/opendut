@@ -1,11 +1,13 @@
 use std::fmt::{Debug, Formatter};
 use std::io;
 use std::net::Ipv4Addr;
+use std::process::Command;
 
 use anyhow::anyhow;
 use futures::TryStreamExt;
 use netlink_packet_route::link::nlas;
 use netlink_packet_route::LinkMessage;
+use regex::Regex;
 
 use opendut_types::topology::InterfaceName;
 
@@ -135,6 +137,94 @@ impl NetworkDeviceManager {
             .map_err(|cause| Error::DeleteInterface { interface: interface.clone(), cause })?;
         Ok(())
     }
+
+    pub async fn load_cangw_kernel_module(&self) -> Result<()> {
+        Command::new("modprobe")
+                    .arg("can-gw")
+                    .status()
+                    .map_err(|cause| Error::CanGwModprobe { cause })?;
+        Ok(())
+    }
+
+    pub async fn remove_all_can_routes(&self) -> Result<()> {
+        Command::new("cangw")
+                    .arg("-F")
+                    .status()
+                    .map_err(|cause| Error::CanRouteFlushing { cause })?;
+        Ok(())
+    }
+
+    pub async fn create_vcan_interface(&self, name: &InterfaceName) -> Result<Interface> {
+        if self.find_interface(name).await?.is_none() {
+            Command::new("ip")
+                    .arg("link")
+                    .arg("add")
+                    .arg("dev")
+                    .arg(name.name())
+                    .arg("type")
+                    .arg("vcan")
+                    .status()
+                    .map_err(|cause| Error::VCanInterfaceCreation { name: name.clone(), cause })?;
+        }
+
+        let interface = self.try_find_interface(name).await?;
+        Ok(interface)
+    }
+
+    pub async fn create_can_route(&self, src: InterfaceName, dst: InterfaceName, can_fd: bool) -> Result<()> {
+        self.try_find_interface(&src).await?;
+        self.try_find_interface(&dst).await?;
+        // TODO: Do we also have to ensure that the interface is up?
+
+        if can_fd {
+            Command::new("cangw")
+                .arg("-A")
+                .arg("-s")
+                .arg(src.name())
+                .arg("-d")
+                .arg(dst.name())
+                .arg("-e")
+                .arg("-X")
+                .status()
+                .map_err(|cause| Error::CanRouteCreation { src: src.clone(), dst: dst.clone(), cause })?;
+        } else {
+            Command::new("cangw")
+                .arg("-A")
+                .arg("-s")
+                .arg(src.name())
+                .arg("-d")
+                .arg(dst.name())
+                .arg("-e")
+                .status()
+                .map_err(|cause| Error::CanRouteCreation { src: src.clone(), dst: dst.clone(), cause })?;
+        }
+        
+        self.check_can_route_exists(src.clone(), dst.clone(), can_fd).await?.then(|| ()).ok_or(Error::CanRouteCreationNoCause { src: src.clone(), dst: dst.clone() })?;
+
+        Ok(())
+    }
+
+
+    pub async fn check_can_route_exists(&self, src: InterfaceName, dst: InterfaceName, can_fd: bool) -> Result<bool> {
+        let output = Command::new("cangw")
+                .arg("-L")
+                .output()
+                .map_err(|cause| Error::ListCanRoutes { cause })?;
+
+        let output_str = String::from_utf8(output.stdout).unwrap();
+        
+        let re = Regex::new(r"(?m)^cangw -A -s ([^\n ]+) -d ([^\n ]+) ((?:-X )?)-e #.*$").unwrap();
+            
+        for (_, [exist_src, exist_dst, can_fd_flag]) in re.captures_iter(&output_str).map(|c| c.extract()) {
+            let exist_can_fd = can_fd_flag.trim() == "-X";
+            if exist_src == src.to_string() && exist_dst == dst.to_string() && exist_can_fd == can_fd {
+                return Ok(true)
+            }
+            
+        }
+
+        Ok(false)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -166,6 +256,18 @@ pub enum Error {
     SetInterfaceUp { interface: Interface, cause: rtnetlink::Error },
     #[error("Failure while joining interface {interface} to bridge {bridge}: {cause}")]
     JoinInterfaceToBridge { interface: Interface, bridge: Interface, cause: rtnetlink::Error },
+    #[error("Failure while creating virtual CAN interface '{name}': {cause}")]
+    VCanInterfaceCreation { name: InterfaceName, cause: std::io::Error },
+    #[error("Failure while loading can-gw kernel module: {cause}")]
+    CanGwModprobe { cause: std::io::Error },
+    #[error("Failure while flushing existing CAN routes: {cause}")]
+    CanRouteFlushing { cause: std::io::Error },
+    #[error("Failure while creating CAN route '{src}' -> '{dst}': {cause}")]
+    CanRouteCreation { src: InterfaceName, dst: InterfaceName, cause: std::io::Error },
+    #[error("Failure while creating CAN route '{src}' -> '{dst}'")]
+    CanRouteCreationNoCause { src: InterfaceName, dst: InterfaceName},
+    #[error("Failure while listing CAN routes: {cause}")]
+    ListCanRoutes { cause: std::io::Error },
     #[error("{message}")]
     Other { message: String },
 }
