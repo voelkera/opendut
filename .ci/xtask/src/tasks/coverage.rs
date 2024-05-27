@@ -36,7 +36,10 @@ pub fn coverage() -> crate::Result {
             "--timeout=30",
             "--out", "xml", "html", "lcov",
             "--output-dir", out_dir.to_str().unwrap(),
+            "--all-targets",
+            "--doc"
         ])
+        .env("RUSTC_BOOTSTRAP", "1")
         .run_requiring_success()?;
 
     let files = fs::read_dir(&out_dir)?
