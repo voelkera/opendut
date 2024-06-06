@@ -365,14 +365,38 @@ mod tests {
     #[test]
     fn A_PeerName_may_contain_an_underscore() -> Result<()> {
         let peer_name =
-            PeerName::try_from("asd-123".to_string()).expect("Failed to create peer name");
-        assert_eq!(peer_name.0, "asd-123");
+            PeerName::try_from("asd_123".to_string()).expect("Failed to create peer name");
+        assert_eq!(peer_name.0, "asd_123");
+        Ok(())
+    }
+
+    #[test]
+    fn A_PeerName_should_not_contain_invalid_characters() -> Result<()> {
+        let is_error = PeerName::try_from("asd@123".to_string()).is_err();
+        assert!(is_error);
         Ok(())
     }
 
     #[test]
     fn A_PeerName_should_not_start_with_a_hyphen() -> Result<()> {
-        let _ = PeerName::try_from("-123".to_string()).is_err();
+        let is_error = PeerName::try_from("-123".to_string()).is_err();
+        assert!(is_error);
+        Ok(())
+    }
+    
+    #[test]
+    fn A_PeerName_should_not_be_too_short() -> Result<()> {
+        let is_error = PeerName::try_from("abc".to_string()).is_err();
+        assert!(is_error);
+        Ok(())
+    }
+
+    #[test]
+    fn A_PeerName_should_not_be_too_long() -> Result<()> {
+        let is_error = PeerName::try_from(
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string()
+        ).is_err();
+        assert!(is_error);
         Ok(())
     }
 }

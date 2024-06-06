@@ -25,12 +25,58 @@ pub enum PeerBlockedState {
 }
 
 impl Default for PeerState {
+    /// PeerState Down is default State.
+    /// ```
+    /// use std::net::IpAddr;
+    /// use std::str::FromStr;
+    /// use googletest::assert_that;
+    /// use opendut_types::peer::state::{PeerBlockedState, PeerState, PeerUpState};
+    /// use opendut_types::ShortName;
+    ///
+    /// let default_state = PeerState::default();
+    /// assert_eq!(default_state, PeerState::Down);
+    /// ```
     fn default() -> Self {
         Self::Down
     }
 }
 
 impl ShortName for PeerState {
+    /// Retrieve the short name for PeerState.
+    /// ```
+    /// use std::net::IpAddr;
+    /// use std::str::FromStr;
+    /// use googletest::assert_that;
+    /// use opendut_types::peer::state::{PeerBlockedState, PeerState, PeerUpState};
+    /// use opendut_types::ShortName;
+    ///
+    /// let down_state = PeerState::Down;
+    /// assert_eq!(down_state.short_name(), "Down");
+    ///
+    /// let available_state = PeerState::Up { 
+    ///     inner: PeerUpState::Available, 
+    ///     remote_host: IpAddr::from_str("1.1.1.1").unwrap()
+    /// };
+    /// assert_eq!(available_state.short_name(), "Available");
+    ///
+    /// let deploying_state = PeerState::Up { 
+    ///     inner: PeerUpState::Blocked(PeerBlockedState::Deploying), 
+    ///     remote_host: IpAddr::from_str("1.1.1.1").unwrap()
+    /// };
+    /// assert_eq!(deploying_state.short_name(), "Deploying");
+    ///
+    /// let member_state = PeerState::Up { 
+    ///     inner: PeerUpState::Blocked(PeerBlockedState::Member), 
+    ///     remote_host: IpAddr::from_str("1.1.1.1").unwrap()
+    /// };
+    /// assert_eq!(member_state.short_name(), "Member");
+    /// 
+    /// let undeploying_state = PeerState::Up {
+    ///     inner: PeerUpState::Blocked(PeerBlockedState::Undeploying), 
+    ///     remote_host: IpAddr::from_str("1.1.1.1").unwrap()
+    /// };
+    /// assert_eq!(undeploying_state.short_name(), "Undeploying");
+    /// ```
     fn short_name(&self) -> &'static str {
         match self {
             PeerState::Up { inner, .. } => match inner {
