@@ -89,3 +89,53 @@ impl ShortName for PeerState {
         }
     }
 }
+
+#[cfg(test)]
+#[allow(non_snake_case)]
+mod tests {
+    use std::str::FromStr;
+    use googletest::prelude::*;
+    use super::*;
+
+    #[test]
+    fn PeerState_short_name_Available() -> Result<()> {
+        assert_eq!(PeerState::Up {
+            inner: PeerUpState::Available,
+            remote_host: IpAddr::from_str("1.1.1.1").unwrap()
+        }.short_name(), "Available");
+        Ok(())
+    }
+
+    #[test]
+    fn PeerState_short_name_Deploying() -> Result<()> {
+        assert_eq!(PeerState::Up {
+            inner: PeerUpState::Blocked(PeerBlockedState::Deploying),
+            remote_host: IpAddr::from_str("1.1.1.1").unwrap()
+        }.short_name(), "Deploying");
+        Ok(())
+    }
+
+    #[test]
+    fn PeerState_short_name_Member() -> Result<()> {
+        assert_eq!(PeerState::Up {
+            inner: PeerUpState::Blocked(PeerBlockedState::Member),
+            remote_host: IpAddr::from_str("1.1.1.1").unwrap()
+        }.short_name(), "Member");
+        Ok(())
+    }
+
+    #[test]
+    fn PeerState_short_name_Undeploying() -> Result<()> {
+        assert_eq!(PeerState::Up {
+            inner: PeerUpState::Blocked(PeerBlockedState::Undeploying),
+            remote_host: IpAddr::from_str("1.1.1.1").unwrap()
+        }.short_name(), "Undeploying");
+        Ok(())
+    }
+
+    #[test]
+    fn PeerState_short_name_Down() -> Result<()> {
+        assert_eq!(PeerState::Down.short_name(), "Down");
+        Ok(())
+    }
+}

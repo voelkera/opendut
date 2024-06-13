@@ -39,3 +39,34 @@ impl Default for DeployedClusterState {
         Self::Unhealthy
     }
 }
+
+#[cfg(test)]
+#[allow(non_snake_case)]
+mod tests {
+    use googletest::prelude::*;
+    use super::*;
+
+    #[test]
+    fn A_ClusterState_should_have_short_name_Healthy() -> Result<()> {
+        assert_eq!(ClusterState::Deployed(DeployedClusterState::Healthy).short_name(), "Healthy");
+        Ok(())
+    }
+
+    #[test]
+    fn A_ClusterState_should_have_short_name_Unhealthy() -> Result<()> {
+        assert_eq!(ClusterState::Deployed(DeployedClusterState::Unhealthy).short_name(), "Unhealthy");
+        Ok(())
+    }
+
+    #[test]
+    fn A_ClusterState_should_have_short_name_Deploying() -> Result<()> {
+        assert_eq!(ClusterState::Deploying.short_name(), "Deploying");
+        Ok(())
+    }
+
+    #[test]
+    fn A_ClusterState_should_have_short_name_Undeployed() -> Result<()> {
+        assert_eq!(ClusterState::Undeployed.short_name(), "Undeployed");
+        Ok(())
+    }
+}

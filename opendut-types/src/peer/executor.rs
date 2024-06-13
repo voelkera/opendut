@@ -492,3 +492,98 @@ impl fmt::Display for ContainerCommandArgument {
 
 #[derive(thiserror::Error, Clone, Debug)]
 pub enum IllegalContainerConfiguration {}
+
+#[cfg(test)]
+#[allow(non_snake_case)]
+mod tests {
+    use googletest::prelude::*;
+    use super::*;
+
+    #[test]
+    fn ContainerName_from_string_successful() -> Result<()> {
+        let is_ok = ContainerName::try_from("test-container-name".to_owned()).is_ok();
+        assert!(is_ok);
+        Ok(())
+    }
+
+    #[test]
+    fn ContainerName_from_str_successful() -> Result<()> {
+        let is_error = ContainerName::try_from("test").is_ok();
+        assert!(is_error);
+        Ok(())
+    }
+
+    #[test]
+    fn String_from_ContainerName() -> Result<()> {
+        let string = String::from(ContainerName::Value("Test".to_owned()));
+        assert_eq!(string, "Test".to_owned());
+        Ok(())
+    }
+
+    #[test]
+    fn String_from_empty_ContainerName() -> Result<()> {
+        let string = String::from(ContainerName::Value("".to_owned()));
+        assert_eq!(string, "".to_owned());
+        Ok(())
+    }
+
+    #[test]
+    fn String_from_referenced_ContainerName() -> Result<()> {
+        let string = String::from(&ContainerName::Value("Test".to_owned()));
+        assert_eq!(string, "Test".to_owned());
+        Ok(())
+    }
+
+    #[test]
+    fn String_from_empty_referenced_ContainerName() -> Result<()> {
+        let string = String::from(&ContainerName::Value("".to_owned()));
+        assert_eq!(string, "".to_owned());
+        Ok(())
+    }
+
+    #[test]
+    fn ContainerEnvironmentVariable_new_should_succeed() -> Result<()> {
+        let container_environment_variable =
+            ContainerEnvironmentVariable::new("Name", "Value").unwrap();
+        assert_eq!(container_environment_variable.name, "Name");
+        assert_eq!(container_environment_variable.value, "Value");
+        Ok(())
+    }
+
+    #[test]
+    fn ContainerEnvironmentVariable_new_empty_name_error() -> Result<()> {
+        let is_error = ContainerEnvironmentVariable::new("", "Value").is_err();
+        assert!(is_error);
+        Ok(())
+    }
+
+    #[test]
+    fn ContainerEnvironmentVariable_name_value_available() -> Result<()> {
+        let container_environment_variable =
+            ContainerEnvironmentVariable::new("Name", "Value").unwrap();
+        assert_eq!(container_environment_variable.name(), "Name");
+        assert_eq!(container_environment_variable.value(), "Value");
+        Ok(())
+    }
+
+    #[test]
+    fn ContainerImage_from_empty_string_results_in_error() -> Result<()> {
+        let is_error = ContainerImage::try_from("".to_owned()).is_err();
+        assert!(is_error);
+        Ok(())
+    }
+
+    #[test]
+    fn ContainerVolume_from_empty_string_succeeds() -> Result<()> {
+        let container_volume = ContainerVolume::try_from("ContainerVolumeName".to_owned()).unwrap();
+        assert_eq!(container_volume.0, "ContainerVolumeName".to_owned());
+        Ok(())
+    }
+
+    #[test]
+    fn ContainerVolume_from_empty_string_results_in_error() -> Result<()> {
+        let is_error = ContainerVolume::try_from("".to_owned()).is_err();
+        assert!(is_error);
+        Ok(())
+    }
+}

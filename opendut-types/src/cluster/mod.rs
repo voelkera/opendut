@@ -184,4 +184,25 @@ mod tests {
         let _peer_name = ClusterName::try_from("_asd123".to_string()).is_err();
         Ok(())
     }
+
+    #[test]
+    fn A_PeerName_should_not_be_too_long() -> Result<()> {
+        let is_too_long = ClusterName::try_from("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string()).is_err();
+        assert!(is_too_long);
+        Ok(())
+    }
+
+    #[test]
+    fn A_PeerName_should_not_be_too_short() -> Result<()> {
+        let is_too_short = ClusterName::try_from("aaa".to_string()).is_err();
+        assert!(is_too_short);
+        Ok(())
+    }
+
+    #[test]
+    fn A_PeerName_should_not_contain_invalid_character() -> Result<()> {
+        let is_name_invalid = ClusterName::try_from("a&*aa".to_string()).is_err();
+        assert!(is_name_invalid);
+        Ok(())
+    }
 }
