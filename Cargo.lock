@@ -2778,6 +2778,7 @@ dependencies = [
  "opendut-carl-api",
  "opendut-types",
  "opendut-util",
+ "pem",
  "predicates",
  "rstest",
  "serde",
@@ -2785,7 +2786,9 @@ dependencies = [
  "shadow-rs",
  "thiserror",
  "tokio",
+ "toml_edit 0.21.1",
  "tonic",
+ "url",
  "uuid",
 ]
 
@@ -2971,6 +2974,7 @@ dependencies = [
  "opentelemetry-otlp",
  "opentelemetry-semantic-conventions",
  "opentelemetry_sdk",
+ "pem",
  "serde",
  "shadow-rs",
  "simple_moving_average",
