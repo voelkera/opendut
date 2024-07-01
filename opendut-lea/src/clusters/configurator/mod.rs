@@ -1,8 +1,5 @@
 use leptos::*;
 use leptos_router::use_params_map;
-use tracing::info;
-
-
 use opendut_types::cluster::{ClusterId};
 
 use crate::app::{ExpectGlobals, use_app_globals};
@@ -88,9 +85,8 @@ pub fn ClusterConfigurator() -> impl IntoView {
         let cluster_deployments = create_local_resource(|| {}, move |_| {
             let mut carl = globals.expect_client();
             async move {
-                let test = carl.cluster.list_cluster_deployments().await
-                    .expect("Failed to request the list of cluster deployments");
-                test
+                carl.cluster.list_cluster_deployments().await
+                    .expect("Failed to request the list of cluster deployments")
             }
         });
 
@@ -103,7 +99,17 @@ pub fn ClusterConfigurator() -> impl IntoView {
                 None => Vec::new()
             }
         };
+        
+        let deployed_signal = move || {
+            create_rw_signal(IsDeployed(deployed_clusters().contains(&cluster_id.get())))
+        };
 
+        let test = move || {
+            MaybeSignal::derive(move || {
+                IsDeployed(deployed_clusters().contains(&cluster_id.get()))
+            })
+        };
+        
         view! {
             <BasePageContainer
                 title="Configure Cluster"
@@ -112,7 +118,7 @@ pub fn ClusterConfigurator() -> impl IntoView {
                     view! {
                         <Controls 
                             cluster_configuration=cluster_configuration.read_only() 
-                            deployed_signal=create_rw_signal(IsDeployed(deployed_clusters().contains(&cluster_id.get())))
+                            deployed_signal=deployed_signal()
                         /> 
                     }
                 }
@@ -134,13 +140,13 @@ pub fn ClusterConfigurator() -> impl IntoView {
                     </div>
                     <div class="container">
                         <div class=("is-hidden", move || TabIdentifier::General != active_tab.get())>
-                            <GeneralTab cluster_configuration=cluster_configuration />
+                            <GeneralTab cluster_configuration=cluster_configuration deployed_signal=test() />
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Devices != active_tab.get())>
-                            <DevicesTab cluster_configuration=cluster_configuration />
+                            <DevicesTab cluster_configuration=cluster_configuration deployed_signal=test() />
                         </div>
                         <div class=("is-hidden", move || TabIdentifier::Leader != active_tab.get())>
-                            <LeaderTab cluster_configuration=cluster_configuration />
+                            <LeaderTab cluster_configuration=cluster_configuration deployed_signal=test() />
                         </div>
                     </div>
                 </div>

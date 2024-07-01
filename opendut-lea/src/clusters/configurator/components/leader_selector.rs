@@ -1,19 +1,20 @@
 use std::collections::HashSet;
 
-use leptos::{component, create_read_slice, create_slice, view, IntoView, RwSignal, SignalGet, SignalWith};
+use leptos::{component, create_read_slice, create_slice, view, IntoView, RwSignal, SignalGet, SignalWith, MaybeSignal};
 
 use opendut_types::peer::PeerId;
 use opendut_types::topology::DeviceId;
 
 use crate::clusters::configurator::components::{get_all_peers, get_all_selected_devices};
 use crate::clusters::configurator::types::UserClusterConfiguration;
+use crate::clusters::overview::IsDeployed;
 use crate::util::{Ior, NON_BREAKING_SPACE};
 
 pub type LeaderSelectionError = String;
 pub type LeaderSelection = Ior<LeaderSelectionError, PeerId>;
 
 #[component]
-pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
+pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>, deployed_signal: MaybeSignal<IsDeployed>) -> impl IntoView {
     let peer_descriptors = get_all_peers();
 
     let getter_selected_devices = create_read_slice(cluster_configuration, |config| {
@@ -36,6 +37,10 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
             LeaderSelection::Left(error) => error.to_owned(),
             LeaderSelection::Both(error, _) => error.to_owned(),
         })
+    };
+    
+    let button_disabled = move || {
+        deployed_signal.get().0
     };
 
     let rows = move || {
@@ -92,6 +97,7 @@ pub fn LeaderSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                                     <input
                                         type = "radio"
                                         name = "answer"
+                                        disabled = button_disabled()
                                         checked = move || {
                                             match getter_leader.get() {
                                                 LeaderSelection::Right(leader) => peer.id == leader,

@@ -72,7 +72,7 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
         }
     });
 
-    let button_state = MaybeSignal::derive(move || {
+    let button_state = move || {
         if deployed_signal.get().0 {
             ButtonState::Disabled
         } else if store_action.pending().get() {
@@ -88,14 +88,14 @@ fn SaveClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguration>
                 }
             })
         }
-    });
+    };
 
     view! {
         <IconButton
             icon=FontAwesomeIcon::Save
             color=ButtonColor::Info
             size=ButtonSize::Normal
-            state=button_state
+            state=button_state()
             label="Save Cluster"
             on_action=move || {
                 store_action.dispatch(());
@@ -118,23 +118,22 @@ fn DeleteClusterButton(cluster_configuration: ReadSignal<UserClusterConfiguratio
         }
     });
 
-    let (button_state, _) =
-        create_signal({
-            if deployed_signal.get().0 {
-                ButtonState::Disabled
-            } else if delete_action.pending().get() {
-                ButtonState::Loading
-            } else {
-                ButtonState::Default
-            }
-        });
+    let button_state = move || {
+        if deployed_signal.get().0 {
+            ButtonState::Disabled
+        } else if delete_action.pending().get() {
+            ButtonState::Loading
+        } else {
+            ButtonState::Default
+        }
+    };
     
     view! {
         <ConfirmationButton
             icon=FontAwesomeIcon::TrashCan
             color=ButtonColor::Danger
             size=ButtonSize::Normal
-            state=button_state
+            state=button_state()
             label="Remove Cluster?"
             on_conform=move || {
                 cluster_configuration.with_untracked(|config| {

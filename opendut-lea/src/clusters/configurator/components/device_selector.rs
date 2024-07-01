@@ -8,6 +8,7 @@ use opendut_types::topology::{DeviceDescriptor, DeviceId};
 
 use crate::clusters::configurator::components::{get_all_peers, get_all_selected_devices};
 use crate::clusters::configurator::types::UserClusterConfiguration;
+use crate::clusters::overview::IsDeployed;
 use crate::components::{ButtonColor, ButtonSize, ButtonState, FontAwesomeIcon, IconButton};
 use crate::util::{Ior, NON_BREAKING_SPACE};
 use crate::util::net::UserNetworkInterfaceConfiguration;
@@ -16,7 +17,7 @@ pub type DeviceSelectionError = String;
 pub type DeviceSelection = Ior<DeviceSelectionError, HashSet<DeviceId>>;
 
 #[component]
-pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
+pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>, deployed_signal: MaybeSignal<IsDeployed>) -> impl IntoView {
     let peer_descriptors = get_all_peers();
 
     let (getter, setter) = create_slice(
@@ -35,6 +36,14 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
             DeviceSelection::Left(error) => error.to_owned(),
             DeviceSelection::Both(error, _) => error.to_owned(),
         })
+    };
+
+    let button_state = move || {
+        if deployed_signal.get().0 {
+            ButtonState::Disabled
+        } else {
+            ButtonState::Enabled
+        }
     };
 
     let rows = move || {
@@ -76,7 +85,7 @@ pub fn DeviceSelector(cluster_configuration: RwSignal<UserClusterConfiguration>)
                                         true => ButtonColor::Success,
                                     })
                                     size=ButtonSize::Small
-                                    state=ButtonState::Enabled
+                                    state=button_state()
                                     label="More infos"
                                     on_action=move || icon_button_on_action(
                                         selected_signal,

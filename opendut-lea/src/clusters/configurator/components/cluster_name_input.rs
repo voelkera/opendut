@@ -2,11 +2,12 @@ use leptos::*;
 
 use opendut_types::cluster::{IllegalClusterName, ClusterName};
 
-use crate::components::{UserInput, UserInputValue};
+use crate::components::{ReadOnlyInput, UserInput, UserInputValue};
 use crate::clusters::configurator::types::UserClusterConfiguration;
+use crate::clusters::overview::IsDeployed;
 
 #[component]
-pub fn ClusterNameInput(cluster_configuration: RwSignal<UserClusterConfiguration>) -> impl IntoView {
+pub fn ClusterNameInput(cluster_configuration: RwSignal<UserClusterConfiguration>, deployed_signal: MaybeSignal<IsDeployed>) -> impl IntoView {
 
     let (getter, setter) = create_slice(cluster_configuration,
         |config| {
@@ -47,14 +48,36 @@ pub fn ClusterNameInput(cluster_configuration: RwSignal<UserClusterConfiguration
             }
         }
     };
+    
+    let name_input = move || {
+        if deployed_signal.get().0 {
+            let cluster_name = MaybeSignal::derive(move ||
+                match cluster_configuration.get().name {
+                    UserInputValue::Left(_) => { String::new() }
+                    UserInputValue::Right(name) => { name }
+                    UserInputValue::Both(_, name) => { name }
+                }
+            );
+            view! {
+                <ReadOnlyInput
+                    label="Cluster Name"
+                    value=cluster_name
+                />
+            }
+        } else {
+            view! {
+                <UserInput
+                    getter=getter
+                    setter=setter
+                    label="Cluster Name"
+                    placeholder="AwesomeCluster"
+                    validator=validator
+                />
+            }
+        }
+    };
 
     view! {
-        <UserInput
-            getter=getter
-            setter=setter
-            label="Cluster Name"
-            placeholder="AwesomeCluster"
-            validator=validator
-        />
+       <div>{ name_input }</div>
     }
 }
