@@ -42,10 +42,9 @@ impl CreateClusterConfigurationCli {
         
         let cluster_deployments = carl.cluster.list_cluster_deployments().await
             .map_err(|_| String::from("Failed to get list of cluster deployments!"))?;
-        
-        cluster_deployments.into_iter()
-            .find(|cluster_deployment| cluster_deployment.id != cluster_id)
-            .ok_or(format!("Cluster <{}> can not be updated while being deployed.", cluster_id))?;
+        if cluster_deployments.into_iter().any(|cluster_deployment| cluster_deployment.id == cluster_id) {
+            Err(format!("Cluster <{}> can not be updated while being deployed.", cluster_id))?
+        };
 
         let leader = PeerId::from(self.leader_id); //TODO: check if peer exists
 
